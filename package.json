@@ -1,0 +1,22 @@
+{
+  "name": "adun-lost-and-found",
+  "version": "1.0.0",
+  "description": "A simple lost and found marketplace for ADUN students. Made by cyber security students",
+  "repository": {
+    "type": "git",
+    "url": "github.com/tobibamidele/adun-sen-112"
+  },
+  "license": "ISC",
+  "author": "Tobi Bamidele",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "sqlite3": "^6.0.1"
+  }
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ADUN Lost & Found</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="/" class="brand">ADUN Lost & Found</a>
+            <div class="nav-links">
+                <a href="/">Browse</a>
+                <a href="/cart.html">Cart (<span id="cart-count">0</span>)</a>
+                <div id="auth-links"></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <form id="login-form">
+            <h2 style="margin-bottom:1rem;text-align:center">Login</h2>
+            <div id="error-msg" class="alert alert-error hidden"></div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+            <div class="form-link">Don't have an account? <a href="/register.html">Register</a></div>
+        </form>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errEl = document.getElementById('error-msg');
+
+            const data = await api.post('/auth/login', { email, password });
+
+            if (data.success) {
+                auth.setUser(data.user);
+                window.location.href = '/';
+            } else {
+                errEl.textContent = data.message || 'Login failed';
+                errEl.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
