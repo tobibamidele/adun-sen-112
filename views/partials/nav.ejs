@@ -1,0 +1,20 @@
+<nav>
+    <div class="container">
+        <a href="/" class="brand">ADUN Lost & Found</a>
+        <div class="nav-links">
+            <a href="/">Browse</a>
+            <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+            <% if (typeof user !== 'undefined' && user) { %>
+                <a href="/orders">Orders</a>
+                <% if (user.type === 'seller') { %>
+                    <a href="/seller">Dashboard</a>
+                <% } %>
+                <a href="/auth/logout">Logout</a>
+                <span><%= user.email %></span>
+            <% } else { %>
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            <% } %>
+        </div>
+    </div>
+</nav>

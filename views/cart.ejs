@@ -1,0 +1,66 @@
+<%- include('partials/head', { title: 'Cart' }) %>
+<%- include('partials/nav') %>
+
+<main class="container">
+    <h1 class="page-title">Shopping Cart</h1>
+    <div id="cart-items"></div>
+    <div id="cart-footer" class="hidden">
+        <div class="cart-total" id="cart-total"></div>
+        <div style="display:flex;gap:1rem;justify-content:flex-end">
+            <button class="btn btn-outline" onclick="clearCart()">Clear Cart</button>
+            <a href="/checkout" class="btn btn-secondary" id="checkout-btn">Proceed to Checkout</a>
+        </div>
+    </div>
+</main>
+
+<script>
+function renderCart() {
+    const items = cart.getItems();
+    const el = document.getElementById('cart-items');
+    const footer = document.getElementById('cart-footer');
+    const totalEl = document.getElementById('cart-total');
+
+    if (!items.length) {
+        el.innerHTML = '<div class="empty-state"><p>Your cart is empty.</p><a href="/" class="btn btn-primary">Browse Items</a></div>';
+        footer.classList.add('hidden');
+        return;
+    }
+
+    footer.classList.remove('hidden');
+    el.innerHTML = items.map(function(item) {
+        return '<div class="cart-item">' +
+            '<img src="' + (item.image || '') + '" onerror="this.src=\'https://placehold.co/80\'">' +
+            '<div class="cart-item-info">' +
+                '<h4>' + item.name + '</h4>' +
+                '<p>$' + parseFloat(item.price).toFixed(2) + ' each</p>' +
+            '</div>' +
+            '<input type="number" value="' + item.quantity + '" min="1" style="width:60px" onchange="updateQty(\'' + item.product_id + '\', this.value)">' +
+            '<span style="font-weight:600;min-width:80px;text-align:right">$' + (item.price * item.quantity).toFixed(2) + '</span>' +
+            '<button class="btn btn-danger btn-sm" onclick="removeItem(\'' + item.product_id + '\')">&times;</button>' +
+        '</div>';
+    }.bind(this));
+
+    totalEl.textContent = 'Total: $' + cart.getTotal().toFixed(2);
+}
+
+function updateQty(productId, qty) {
+    cart.updateQuantity(productId, parseInt(qty) || 0);
+    renderCart();
+}
+
+function removeItem(productId) {
+    cart.removeItem(productId);
+    renderCart();
+}
+
+function clearCart() {
+    if (confirm('Clear your cart?')) {
+        cart.clear();
+        renderCart();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', renderCart);
+</script>
+
+<%- include('partials/footer') %>

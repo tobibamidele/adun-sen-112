@@ -1,0 +1,78 @@
+<%- include('partials/head', { title: 'Checkout' }) %>
+<%- include('partials/nav') %>
+
+<main class="container" id="checkout-page">
+    <h1 class="page-title">Checkout</h1>
+    <div id="checkout-content"></div>
+</main>
+
+<script>
+async function renderCheckout() {
+    const content = document.getElementById('checkout-content');
+
+    <% if (!user) { %>
+        content.innerHTML = '<div class="empty-state"><p>Please log in to checkout.</p><a href="/login" class="btn btn-primary">Login</a></div>';
+        return;
+    <% } %>
+
+    const items = cart.getItems();
+    if (!items.length) {
+        content.innerHTML = '<div class="empty-state"><p>Your cart is empty.</p><a href="/" class="btn btn-primary">Browse Items</a></div>';
+        return;
+    }
+
+    const total = cart.getTotal();
+
+    content.innerHTML = '<div style="background:white;padding:2rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08)">' +
+        '<h3 style="margin-bottom:1rem">Order Summary</h3>' +
+        items.map(function(item) {
+            return '<div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #eee">' +
+                '<span>' + item.name + ' x ' + item.quantity + '</span>' +
+                '<span>$' + (item.price * item.quantity).toFixed(2) + '</span>' +
+            '</div>';
+        }).join('') +
+        '<div style="display:flex;justify-content:space-between;padding:1rem 0;font-size:1.25rem;font-weight:700">' +
+            '<span>Total</span>' +
+            '<span>$' + total.toFixed(2) + '</span>' +
+        '</div>' +
+        '<button class="btn btn-secondary" onclick="placeOrder()" id="place-order-btn">Place Order (Mock)</button>' +
+        '<div id="order-result" class="alert hidden" style="margin-top:1rem"></div>' +
+    '</div>';
+}
+
+async function placeOrder() {
+    const btn = document.getElementById('place-order-btn');
+    const result = document.getElementById('order-result');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    const items = cart.getItems().map(function(i) {
+        return { product_id: i.product_id, quantity: i.quantity, price: i.price };
+    });
+
+    const res = await fetch('/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+        result.className = 'alert alert-success';
+        result.textContent = 'Order #' + data.orderId + ' placed successfully! Total: $' + parseFloat(data.total).toFixed(2);
+        result.classList.remove('hidden');
+        cart.clear();
+        btn.remove();
+    } else {
+        result.className = 'alert alert-error';
+        result.textContent = data.message;
+        result.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Place Order (Mock)';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', renderCheckout);
+</script>
+
+<%- include('partials/footer') %>

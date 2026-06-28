@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: 'Browse' }) %>
+<%- include('partials/nav') %>
+
+<main class="container">
+    <h1 class="page-title">Browse Items</h1>
+    <div class="product-grid">
+        <% if (!products.length) { %>
+            <div class="empty-state" style="grid-column:1/-1">
+                <p>No items listed yet.</p>
+            </div>
+        <% } %>
+        <% products.forEach(function(p) { %>
+            <div class="card">
+                <img class="card-img" src="<%= p.image_storage_path || '' %>" alt="<%= p.name %>" onerror="this.src='https://placehold.co/400x300?text=No+Image'">
+                <div class="card-body">
+                    <div class="card-title"><%= p.name %></div>
+                    <div class="card-price">$<%= parseFloat(p.price).toFixed(2) %></div>
+                    <div class="card-stock"><%= p.stock > 0 ? p.stock + ' in stock' : 'Out of stock' %></div>
+                    <div style="display:flex;gap:0.5rem">
+                        <a href="/product/<%= p.id %>" class="btn btn-outline btn-sm">View</a>
+                        <button class="btn btn-primary btn-sm" onclick="addToCart('<%= p.id %>')">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</main>
+
+<script>
+async function addToCart(productId) {
+    const res = await fetch('/api/products/' + productId);
+    const data = await res.json();
+    if (data.success) {
+        cart.addItem(data.product);
+    }
+}
+</script>
+
+<%- include('partials/footer') %>

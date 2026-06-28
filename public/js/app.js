@@ -1,70 +1,3 @@
-const api = {
-    async get(path) {
-        const res = await fetch(path);
-        return res.json();
-    },
-
-    async post(path, data) {
-        const res = await fetch(path, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        return res.json();
-    },
-
-    async postForm(path, formData) {
-        const res = await fetch(path, { method: 'POST', body: formData });
-        return res.json();
-    },
-
-    async put(path, data) {
-        const res = await fetch(path, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        return res.json();
-    },
-
-    async putForm(path, formData) {
-        const res = await fetch(path, { method: 'PUT', body: formData });
-        return res.json();
-    },
-
-    async del(path) {
-        const res = await fetch(path, { method: 'DELETE' });
-        return res.json();
-    },
-};
-
-const auth = {
-    getUser() {
-        const data = localStorage.getItem('user');
-        return data ? JSON.parse(data) : null;
-    },
-
-    setUser(user) {
-        localStorage.setItem('user', JSON.stringify(user));
-    },
-
-    async check() {
-        const data = await api.get('/auth/me');
-        if (data.success && data.user) {
-            this.setUser(data.user);
-            return data.user;
-        }
-        localStorage.removeItem('user');
-        return null;
-    },
-
-    async logout() {
-        await api.post('/auth/logout');
-        localStorage.removeItem('user');
-        window.location.href = '/';
-    },
-};
-
 const cart = {
     getItems() {
         return JSON.parse(localStorage.getItem('cart') || '[]');
@@ -126,31 +59,6 @@ const cart = {
     },
 };
 
-function updateNav(user) {
-    const el = document.getElementById('auth-links');
-    if (!el) return;
-
+document.addEventListener('DOMContentLoaded', () => {
     cart.updateBadge();
-
-    if (user) {
-        el.innerHTML = `
-            <a href="/orders.html">Orders</a>
-            ${user.type === 'seller' ? '<a href="/seller.html">Dashboard</a>' : ''}
-            <a href="#" onclick="auth.logout()">Logout</a>
-            <span style="color:#888;font-size:0.85rem">${user.email}</span>
-        `;
-    } else {
-        el.innerHTML = `
-            <a href="/login.html">Login</a>
-            <a href="/register.html">Register</a>
-        `;
-    }
-}
-
-async function initAuth() {
-    const user = await auth.check();
-    updateNav(user);
-    return user;
-}
-
-document.addEventListener('DOMContentLoaded', initAuth);
+});

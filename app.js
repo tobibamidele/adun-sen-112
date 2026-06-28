@@ -1,34 +1,41 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const methodOverride = require('method-override');
 const path = require('path');
 
+const pagesRoutes = require('./routes/pages');
 const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
 const publicRoutes = require('./routes/public');
 const orderRoutes = require('./routes/orders');
 const sellerRoutes = require('./routes/seller');
-const authMiddleware = require('./middleware/auth');
+const loadUser = require('./middleware/loadUser');
 
 const PORT = 3000;
 
 const app = express();
 
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride('_method'));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/', (req, _, next) => {
     console.log(`[REQUEST_LOGGER] Incoming ${req.method} request to ${req.url}`);
     next();
 });
 
+app.use(loadUser);
+app.use('/', pagesRoutes);
 app.use('/auth', authRoutes);
-app.use('/p', authMiddleware, productRoutes);
 app.use('/api', publicRoutes);
-app.use('/api', authMiddleware, orderRoutes);
-app.use('/api', authMiddleware, sellerRoutes);
+app.use('/', orderRoutes);
+app.use('/seller', sellerRoutes);
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.listen(PORT, () => {
     console.log(`[+] Server up and running at ${PORT}`);

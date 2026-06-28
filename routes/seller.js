@@ -17,12 +17,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.get('/seller/products', (req, res) => {
-    if (res.locals.userType !== 'seller') {
-        return res.status(403).json({ success: false, message: "Not a seller" });
+router.get('/products', (req, res) => {
+    if (!res.locals.user || res.locals.user.type !== 'seller') {
+        return res.status(403).json({ success: false, message: 'Not a seller' });
     }
-
-    db.all(`SELECT * FROM products WHERE owner_id = ? ORDER BY name`, [res.locals.userId], (err, products) => {
+    db.all(`SELECT * FROM products WHERE owner_id = ? ORDER BY name`, [res.locals.user.id], (err, products) => {
         if (err) {
             return res.status(500).json({ success: false, message: err.message });
         }
@@ -30,54 +29,63 @@ router.get('/seller/products', (req, res) => {
     });
 });
 
-router.post('/seller/products', upload.single('image'), (req, res) => {
-    if (res.locals.userType !== 'seller') {
-        return res.status(403).json({ success: false, message: "Not a seller" });
+router.post('/products', upload.single('image'), (req, res) => {
+    if (!res.locals.user || res.locals.user.type !== 'seller') {
+        return res.redirect('/login');
     }
-
     if (!req.file) {
-        return res.status(400).json({ success: false, message: "No image file uploaded" });
+        db.all(`SELECT * FROM products WHERE owner_id = ? ORDER BY name`, [res.locals.user.id], (err, products) => {
+            return res.render('seller', {
+                user: res.locals.user,
+                products: products || [],
+                error: 'No image file uploaded'
+            });
+        });
+        return;
     }
 
     const { name, price, stock } = req.body;
-
     if (!name || !price || !stock) {
-        return res.status(400).json({ success: false, message: "name, price, and stock are required" });
+        db.all(`SELECT * FROM products WHERE owner_id = ? ORDER BY name`, [res.locals.user.id], (err, products) => {
+            return res.render('seller', {
+                user: res.locals.user,
+                products: products || [],
+                error: 'Name, price, and stock are required'
+            });
+        });
+        return;
     }
 
     const productId = crypto.randomUUID();
-
     db.run(
         `INSERT INTO products (id, owner_id, name, price, stock, image_storage_path) VALUES (?, ?, ?, ?, ?, ?)`,
-        [productId, res.locals.userId, name, price, stock, '/uploads/' + req.file.filename],
+        [productId, res.locals.user.id, name, price, stock, '/uploads/' + req.file.filename],
         function (err) {
             if (err) {
-                return res.status(500).json({ success: false, message: err.message });
+                db.all(`SELECT * FROM products WHERE owner_id = ? ORDER BY name`, [res.locals.user.id], (err2, products) => {
+                    return res.render('seller', {
+                        user: res.locals.user,
+                        products: products || [],
+                        error: err.message
+                    });
+                });
+                return;
             }
-            res.status(201).json({
-                success: true,
-                productId,
-                message: `Product ${name} created successfully`,
-                imageUrl: '/uploads/' + req.file.filename,
-            });
+            res.redirect('/seller');
         }
     );
 });
 
-router.put('/seller/products/:id', upload.single('image'), (req, res) => {
-    if (res.locals.userType !== 'seller') {
-        return res.status(403).json({ success: false, message: "Not a seller" });
+router.put('/products/:id', upload.single('image'), (req, res) => {
+    if (!res.locals.user || res.locals.user.type !== 'seller') {
+        return res.redirect('/login');
     }
-
     const productId = req.params.id;
     const { name, price, stock } = req.body;
 
-    db.get(`SELECT * FROM products WHERE id = ? AND owner_id = ?`, [productId, res.locals.userId], (err, product) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: err.message });
-        }
-        if (!product) {
-            return res.status(404).json({ success: false, message: "Product not found" });
+    db.get(`SELECT * FROM products WHERE id = ? AND owner_id = ?`, [productId, res.locals.user.id], (err, product) => {
+        if (err || !product) {
+            return res.redirect('/seller');
         }
 
         let query = `UPDATE products SET name = ?, price = ?, stock = ?`;
@@ -89,37 +97,27 @@ router.put('/seller/products/:id', upload.single('image'), (req, res) => {
         }
 
         query += ` WHERE id = ? AND owner_id = ?`;
-        params.push(productId, res.locals.userId);
+        params.push(productId, res.locals.user.id);
 
         db.run(query, params, function (err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: err.message });
-            }
-            res.json({ success: true, message: "Product updated successfully" });
+            res.redirect('/seller');
         });
     });
 });
 
-router.delete('/seller/products/:id', (req, res) => {
-    if (res.locals.userType !== 'seller') {
-        return res.status(403).json({ success: false, message: "Not a seller" });
+router.delete('/products/:id', (req, res) => {
+    if (!res.locals.user || res.locals.user.type !== 'seller') {
+        return res.redirect('/login');
     }
-
     const productId = req.params.id;
 
-    db.get(`SELECT * FROM products WHERE id = ? AND owner_id = ?`, [productId, res.locals.userId], (err, product) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: err.message });
-        }
-        if (!product) {
-            return res.status(404).json({ success: false, message: "Product not found" });
+    db.get(`SELECT * FROM products WHERE id = ? AND owner_id = ?`, [productId, res.locals.user.id], (err, product) => {
+        if (err || !product) {
+            return res.redirect('/seller');
         }
 
-        db.run(`DELETE FROM products WHERE id = ? AND owner_id = ?`, [productId, res.locals.userId], function (err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: err.message });
-            }
-            res.json({ success: true, message: "Product deleted successfully" });
+        db.run(`DELETE FROM products WHERE id = ? AND owner_id = ?`, [productId, res.locals.user.id], function (err) {
+            res.redirect('/seller');
         });
     });
 });

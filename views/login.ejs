@@ -1,0 +1,23 @@
+<%- include('partials/head', { title: 'Login' }) %>
+<%- include('partials/nav') %>
+
+<main class="container">
+    <form action="/auth/login" method="POST">
+        <h2 style="margin-bottom:1rem;text-align:center">Login</h2>
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="alert alert-error"><%= error %></div>
+        <% } %>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+        <div class="form-link">Don't have an account? <a href="/register">Register</a></div>
+    </form>
+</main>
+
+<%- include('partials/footer') %>

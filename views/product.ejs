@@ -1,0 +1,32 @@
+<%- include('partials/head', { title: product.name }) %>
+<%- include('partials/nav') %>
+
+<main class="container">
+    <div class="product-detail">
+        <img src="<%= product.image_storage_path || '' %>" alt="<%= product.name %>" onerror="this.src='https://placehold.co/600x400?text=No+Image'">
+        <div class="product-info">
+            <h1><%= product.name %></h1>
+            <div class="price">$<%= parseFloat(product.price).toFixed(2) %></div>
+            <div class="stock"><%= product.stock > 0 ? product.stock + ' in stock' : 'Out of stock' %></div>
+            <button class="btn btn-primary" onclick="addToCart()">Add to Cart</button>
+            <br><br>
+            <a href="/" class="btn btn-outline">&larr; Back to Browse</a>
+        </div>
+    </div>
+</main>
+
+<script>
+const _product = <%- JSON.stringify(product) %>;
+
+function addToCart() {
+    fetch('/api/products/' + _product.id)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                cart.addItem(data.product);
+            }
+        });
+}
+</script>
+
+<%- include('partials/footer') %>
