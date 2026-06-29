@@ -3,10 +3,11 @@ const db = require('../db');
 
 const router = express.Router();
 
-router.post('/checkout', (req, res) => {
+router.post('/checkout', async (req, res) => {
     if (!res.locals.user) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
+
     const userId = res.locals.user.id;
     const { items } = req.body;
 
@@ -16,23 +17,25 @@ router.post('/checkout', (req, res) => {
 
     const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    db.serialize(() => {
-        db.run(`INSERT INTO orders (user_id, total) VALUES (?, ?)`, [userId, total], function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: err.message });
-            }
+    try {
+        const [orderResult] = await db.execute(
+            `INSERT INTO orders (user_id, total) VALUES (?, ?)`,
+            [userId, total]
+        );
 
-            const orderId = this.lastID;
-            const stmt = db.prepare(`INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)`);
+        const orderId = orderResult.insertId;
 
-            for (const item of items) {
-                stmt.run(orderId, item.product_id, item.quantity, item.price);
-            }
+        for (const item of items) {
+            await db.execute(
+                `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)`,
+                [orderId, item.product_id, item.quantity, item.price]
+            );
+        }
 
-            stmt.finalize();
-            res.status(201).json({ success: true, orderId, total, message: 'Order placed successfully' });
-        });
-    });
+        res.status(201).json({ success: true, orderId, total, message: 'Order placed successfully' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 module.exports = router;

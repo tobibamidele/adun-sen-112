@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const methodOverride = require('method-override');
 const path = require('path');
+const dotenv = require('dotenv').config();
 
 const pagesRoutes = require('./routes/pages');
 const authRoutes = require('./routes/auth');
@@ -10,7 +11,7 @@ const orderRoutes = require('./routes/orders');
 const sellerRoutes = require('./routes/seller');
 const loadUser = require('./middleware/loadUser');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 
